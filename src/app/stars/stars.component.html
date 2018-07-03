@@ -1,5 +1,6 @@
 <p>
-  stars works!
-  <span class="glyphicon glyphicon-star"></span>
-  <span class="octicon-trashcan"></span>
+  <span class="glyphicon glyphicon-star" *ngFor="let star of stars"
+  [class.glyphicon-star-empty]="star"
+  ></span>
+  <span>{{rating}}星</span>
 </p>
