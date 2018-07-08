@@ -2,6 +2,7 @@ import { Component, OnInit } from '@angular/core';
 import { ProductService, Product } from '../shared/product.service';
 import { FormControl } from '@angular/forms';
 import { debounceTime } from 'rxjs/operators';
+import { Observable } from 'rxjs';
 
 @Component({
   selector: 'app-product',
@@ -10,24 +11,22 @@ import { debounceTime } from 'rxjs/operators';
 })
 export class ProductComponent implements OnInit {
 
-  private products: Product[];
+  private products: Observable<Product[]>;
 
-  private keyword: string;
+  // private keyword: string;
 
-  private titleFilter: FormControl = new FormControl()
+  // private titleFilter: FormControl = new FormControl()
 
   private imgUrl = "http://placehold.it/320x150"
 
-  constructor(private ProductService: ProductService) { 
+  constructor(private productService: ProductService) { 
   }
 
   ngOnInit() {
-    this.products = this.ProductService.getProducts();
-    this.titleFilter.valueChanges
-        .pipe(debounceTime(500))
-        .subscribe(
-          value => this.keyword = value
-        )
+    this.products = this.productService.getProducts();
+    this.productService.searchEvent.subscribe(
+      params => this.products = this.productService.search(params)
+    )
   }
 
 }
