@@ -1,6 +1,8 @@
 import { Component, OnInit } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
 import { ProductService, Product, Comment } from '../shared/product.service';
+import { WebSocketService } from '../shared/web-socket.service'
+import { Subscription } from 'rxjs';
 
 @Component({
   selector: 'app-product-detail',
@@ -9,25 +11,32 @@ import { ProductService, Product, Comment } from '../shared/product.service';
 })
 export class ProductDetailComponent implements OnInit {
 
-  private newRating:number = 5
-  private newComment:string = ""
-  private isCommentHidden = true
-
-  product: Product;
+  newRating:number = 5
+  newComment:string = ""
+  isCommentHidden = true
+  isWatched: boolean = false
+  product: Product
+  currentBid:number
 
   comments: Comment[]
+  subscription: Subscription
+  
 
   constructor(
     private routeInfo: ActivatedRoute,
-    private ProductService: ProductService
+    private productService: ProductService,
+    private wsService: WebSocketService
   ) { }
 
   ngOnInit() {
     let productId: number = this.routeInfo.snapshot.params["productId"]
-    this.ProductService.getProduct(productId).subscribe(
-      product => this.product = product
+    this.productService.getProduct(productId).subscribe(
+      product => {
+        this.product = product
+        this.currentBid = product.price
+      }
     )
-    this.ProductService.getCommentsForProductId(productId).subscribe(
+    this.productService.getCommentsForProductId(productId).subscribe(
       comments => this.comments = comments
     )
   }
@@ -43,6 +52,23 @@ export class ProductDetailComponent implements OnInit {
       this.newRating = 5
       this.newComment = null
       this.isCommentHidden = false
+    }
+  }
+
+  watchProduct(){
+    if(this.subscription){
+      this.subscription.unsubscribe()
+      this.isWatched = false
+      this.subscription = null
+    }else{
+      this.isWatched = true
+      this.subscription = this.wsService.createObservableSocket("ws://localhost:8085", this.product.id)
+      .subscribe(
+        products => {
+          let product = products.find(p => p.productId === this.product.id)
+          this.currentBid = product.bid
+        }
+      )
     }
   }
 }
